@@ -2,12 +2,25 @@
 theme: "./theme.json"
 ---
 
+```
+⠀⠀▒███⠀⠀⠀▒███░⠀⠀░▓░▒███████▒⠀⠀██████████░⠀⠀⠀⠀▒███⠀⠀⠀░███░░███⠀⠀⠀⠀███▒⠀░████████░⠀▒███⠀⠀⠀⠀⠀⠀█████████
+⠀⠀▒███⠀⠀▓████▒⠀░█░███▒⠀⠀⠀▒███⠀███▓⠀⠀⠀▓███⠀⠀⠀█████⠀⠀▓████▒▒███░⠀⠀⠀███▒░███░⠀⠀░███░▒███⠀⠀⠀⠀⠀⠀███ ⠀⠀⠀⠀⠀
+⠀⠀▒███⠀▓▓░███▒▒█░⠀███▒⠀⠀⠀▒███░██████████▒⠀░█▒▒███░▓▓░███▒░██████████▒▒███⠀⠀⠀⠀███▒▒███⠀⠀⠀⠀⠀⠀████████ 
+⠀⠀▒████▓⠀⠀█████░⠀⠀███▒⠀⠀⠀▒███⠀███▓⠀▓███▒⠀░█▒⠀▒████▓⠀░███▒░███░⠀⠀░███▒░███⠀⠀⠀⠀███░▒███⠀⠀⠀⠀⠀⠀███ ⠀⠀⠀⠀⠀
+⠀⠀▒███▒⠀⠀░███▓⠀⠀⠀⠀⠀▒███████▒ ⠀███▓⠀⠀▓███▒█▒⠀⠀▒███▓⠀⠀░███▒░███⠀⠀⠀⠀███▒⠀▒████████▒⠀⠀▒███████⠀█████████
+
+```
+
+
+
 # "SDK v2" and its Route interface
 
 1. Quick origin story
 2. Backpack integration
 3. Route interface design
 4. Connect integration
+
+
 
 ---
 
@@ -87,7 +100,7 @@ Connect had its own super-SDK!
   - Third party repos
 - Consuming UI code can be "dumb"
   - What's a VAA??
-
+- We should provide a default resolver
 
 ---
 
@@ -142,8 +155,63 @@ Connect had its own super-SDK!
         (Called repeatedly until the                                                                                                 
         transfer is complete)                                                                                                        
                                                                                                                                      
-                                                                                                                                     
+---
 
+`RouteResolver`
+
+
+Real example from Backpack:
+
+
+```ts
+
+import {
+  routes,
+  ...
+} from "@wormhole-foundation/sdk-connect";
+
+// Store an instance of RouteResolver
+this.resolver = this.wh.resolver([
+  nttAutomaticRoute(NttTokenAddresses),
+  routes.AutomaticTokenBridgeRoute,
+  MayanRoute,
+]);
+
+// Later when the user fills in the bridging UI we make a request to the resolver
+const request = await routes.RouteTransferRequest.create(
+  this.wh,
+  {
+    source: Wormhole.tokenId(
+      toWormholeChain(srcChain),
+      toWormholeNative(srcToken)
+    ),
+    destination: Wormhole.tokenId(
+      toWormholeChain(dstChain),
+      toWormholeNative(dstToken)
+    ),
+  },
+  this.getWormholeContext(srcChain),
+  this.getWormholeContext(dstChain)
+);
+
+// Fetch routes which support this request
+const foundRoutes = await this.resolver.findRoutes(request);
+
+// Asynchronously fetch a quote for each route, and join them together
+const routesAndQuotes: [routes.Route<Network>, WormholeSwapQuote][] = (
+  await Promise.all(
+    foundRoutes.map(async (route) => {
+      try {
+        return await this.getQuoteForRoute(route, req);
+      } catch (e) {
+        console.warn("Error getting quote for route", e);
+        // Handle error...
+      }
+    })
+  )
+);
+
+```
 
 ---
 
@@ -196,8 +264,65 @@ With Wormhole Connect for example, integrators can add arbitrary `Route` plugins
 
 ---
 
-# `Route` interface today
+# What next?
 
+## SDK feature gaps
+
+Let's finish replacing Advanced Tools!
+
+- Platform support (Near)
+- Attestating tokens
+  - Needs similar high level interface
+
+## Interface improvements
+
+- `RouteResolver` is inadequate
+  - Connect has its own implementation
+- Transaction history
+  - Connect has its own implementation
+- Standardized types for errors/warnings/edge cases
+
+## Other goals
+
+- Arbitrary token support
+  - `supportedDestinationTokens` doesn't scale
+
+
+## North star
+
+How long does it take to build a functional bridging interface?
+
+---
+
+
+
+
+
+
+
+
+                              Thank you
+
+
+    ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀░▒▒▓▓▓▓▒▓▓▓▒
+    ⠀⠀⠀⠀⠀⠀▒▓▓████▓▓▓███▓▓▓▓▓▒▒▒░
+    ⠀⠀⠀⠀░▒███████████████▓██████▓▒░
+    ⠀⠀▒▓██▓▓▓█▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓█▓░
+    ⠀▒█▓▓▓▓▓▓▓▓▓▓▓▓▓▒░░░░░░░▒▓▓▓▓▓▓█▓░
+    ⠀▓▓▓▓▓▓▓▓▓▓▓▓▓▒░░░⠀⠀⠀⠀⠀⠀⠀▒▓▓▓▓▓▓▓▒
+    ⠀▓▓▓▓▓▓▓▓▓▓▓█▓▒▒░░⠀⠀⠀⠀⠀⠀⠀⠀░▒▒▓░▒▒
+    ⠀▓▓▓▓▓▓▓▓▓▓▓░░░░░░⠀⠀⠀⠀⠀⠀⠀▒▒▓▓▒░░
+    ░▓▓▓▓▓▒▒▒░░⠀▒▓▓▓▓▒░░░░░░▒▓▓▓▓▒░
+    ▓▒░░░░⠀⠀░░░▒▓▓▓███▒░░░░░░▒▓▓▓░░
+    ▓▒░░⠀⠀⠀⠀⠀⠀⠀░⠀▒▓▓▓▒░⠀░░⠀░░░░▒░░░
+    ▓▓▓▓▒▒░░░⠀⠀⠀⠀⠀░░░░⠀⠀⠀⠀⠀⠀░░░⠀░▒▓░
+    ▒▓▓▓███▓▓▓▒▒░░⠀⠀⠀⠀⠀⠀⠀⠀⠀░░░░▒▓▓▓▓
+    ⠀▓▓▓▓▓▓██████▓▓▒░░░░░░░░░▒▓▓▓▓▓█░
+    ⠀⠀░░░⠀⠀░░▒▒▓▓▓█▓▒▒▒▒▒░▒▓▒▒░░░░▒░
+    ⠀⠀⠀⠀⠀⠀⠀⠀⠀░▓███████▒▒▒▒███████▓▓▒
+    ⠀⠀⠀⠀⠀⠀⠀⠀▒██████████▒▒█████████▒
+
+---
 
 talk about protocols and platforms
 
