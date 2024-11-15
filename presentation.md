@@ -2,25 +2,23 @@
 theme: "./theme.json"
 ---
 
-```
-⠀⠀▒███⠀⠀⠀▒███░⠀⠀░▓░▒███████▒⠀⠀██████████░⠀⠀⠀⠀▒███⠀⠀⠀░███░░███⠀⠀⠀⠀███▒⠀░████████░⠀▒███⠀⠀⠀⠀⠀⠀█████████
-⠀⠀▒███⠀⠀▓████▒⠀░█░███▒⠀⠀⠀▒███⠀███▓⠀⠀⠀▓███⠀⠀⠀█████⠀⠀▓████▒▒███░⠀⠀⠀███▒░███░⠀⠀░███░▒███⠀⠀⠀⠀⠀⠀███ ⠀⠀⠀⠀⠀
-⠀⠀▒███⠀▓▓░███▒▒█░⠀███▒⠀⠀⠀▒███░██████████▒⠀░█▒▒███░▓▓░███▒░██████████▒▒███⠀⠀⠀⠀███▒▒███⠀⠀⠀⠀⠀⠀████████ 
-⠀⠀▒████▓⠀⠀█████░⠀⠀███▒⠀⠀⠀▒███⠀███▓⠀▓███▒⠀░█▒⠀▒████▓⠀░███▒░███░⠀⠀░███▒░███⠀⠀⠀⠀███░▒███⠀⠀⠀⠀⠀⠀███ ⠀⠀⠀⠀⠀
-⠀⠀▒███▒⠀⠀░███▓⠀⠀⠀⠀⠀▒███████▒ ⠀███▓⠀⠀▓███▒█▒⠀⠀▒███▓⠀⠀░███▒░███⠀⠀⠀⠀███▒⠀▒████████▒⠀⠀▒███████⠀█████████
 
-```
+```ts
+                        ███⠀⠀⠀▒███░⠀⠀░█░▒███████▒⠀⠀██████████░⠀⠀⠀⠀▒███⠀⠀⠀░███░░███⠀⠀⠀⠀███▒⠀░████████░⠀▒███⠀⠀⠀⠀⠀⠀█████████
+                        ███⠀⠀▓████▒⠀░█░███▒⠀⠀⠀▒███⠀███▓⠀⠀⠀▓███⠀⠀⠀█████⠀⠀▓████▒▒███░⠀⠀⠀███▒░███░⠀⠀░███░▒███⠀⠀⠀⠀⠀⠀███ ⠀⠀⠀⠀⠀
+                        ███⠀▓█░███▒▒█░⠀███▒⠀⠀⠀▒███░██████████▒⠀░█▒▒███░▓▓░███▒░██████████▒▒███⠀⠀⠀⠀███▒▒███⠀⠀⠀⠀⠀⠀████████ 
+                        ████▓⠀⠀█████░⠀⠀███▒⠀⠀⠀▒███⠀███▓⠀▓███▒⠀░█▒⠀▒████▓⠀░███▒░███░⠀⠀░███▒░███⠀⠀⠀⠀███░▒███⠀⠀⠀⠀⠀⠀███ ⠀⠀⠀⠀⠀
+import { routes } from  ███▒⠀⠀░███▓⠀⠀⠀⠀⠀▒███████▒ ⠀███▓⠀⠀▓███▒█▒⠀⠀▒███▓⠀⠀░███▒░███⠀⠀⠀⠀███▒⠀▒████████▒⠀⠀▒███████⠀█████████
 
+---
 
-
-# "SDK v2" and its Route interface
+# Agenda
 
 1. Quick origin story
-2. Backpack integration
-3. Route interface design
+2. Route interface design
+3. Backpack integration
 4. Connect integration
-
-
+5. What's next
 
 ---
 
@@ -54,6 +52,8 @@ Looked to Connect for inspiration
 
 Had SDK code in three different places
 
+Unusable for external integrators like backpack
+
 
     ┌───────────────────────────┐
     │     @wormhole/connect     │
@@ -81,13 +81,13 @@ Had SDK code in three different places
     └───────────────────────────┘
                                                    
                                             
-- Problem: lacking cohesion
+Problems:
   - Spread across three code bases
+  - Protocol code is internal
+  - Was never intended for external consumption
+      - Not published, documented, consumable
 
-- Problem: protocol code is internal
-  - Not published, documented, externally usable
-
-- Needed a "headless Connect" all in one place
+Needed a "headless Connect" in a clean package
 
 ---
 
@@ -95,10 +95,8 @@ Had SDK code in three different places
 
 - Bring your own UI
 - Bring your own signer
-- Bring your own routes
-- Had great protocol code to work with in new SDK
 
-## `Route` design goals
+## SDKv2 `Route` design goals
 
 - Agnostic to underlying protocol
 - Easy interface to implement; few required methods
@@ -120,15 +118,17 @@ Adding Wormhole bridging to your app should be as easy as possible.
 3. Choose the quote you want and initiate the transfer
 4. Track the transfer progress until it's complete
 
+## Psuedo-code
+
 ```js
 
     // Step 1
     const wh = new Wormhole(...);
 
-    const router = new router(wh, [
-      TokenBridge,
-      CCTP,
-      Mayan
+    const router = new wh.router([
+      routes.AutomaticTokenBridgeRoute,
+      routes.CCTPRoute,
+      MayanRoute
     ]);
 
     // Step 2
@@ -158,11 +158,13 @@ Adding Wormhole bridging to your app should be as easy as possible.
 
 A `Route` can also be used independently, if you're just using a single protocol.
 
+## Psuedo-code
+
 ```js
 
     const wh = new Wormhole(...);
 
-    const tb = new AutomaticTokenBridgeRoute(wh);
+    const tb = new routes.AutomaticTokenBridgeRoute(wh);
 
     const quote = tb.quote({
       chain: 'Solana',
@@ -181,6 +183,75 @@ A `Route` can also be used independently, if you're just using a single protocol
     
 ```
 
+---
+
+# `Route` Interface
+                                                                                                                  
+                                                                                                                                  
+     Step                                 Parameters                    Route interface method                                       
+     ────                                 ──────────                    ──────────────────────                                       
+                                         ┌──────────────────────────┐                                                                
+     1. Which networks do you support?   │                          │   supportedNetworks(): Network[];                              
+                                         └──────────────────────────┘                                                                
+                                         ┌──────────────────────────┐                                                                
+     2. Which chains do you support?     │ Network:     Mainnet     │   supportedChains(network: Network): Chain[];                  
+                                         └──────────────────────────┘                                                                
+                                         ┌──────────────────────────┐                                                                
+     3. Which tokens can I get?          │ Network:     Mainnet     │   supportedDestinationTokens<N extends Network>(               
+                                         │ From chain:  Solana      │     token: TokenId,                                            
+                                         │ To chain:    Ethereum    │     fromChain: ChainContext<N>,                                
+                                         │ From token:  JUP         │     toChain: ChainContext<N>,                                  
+                                         └──────────────────────────┘   ): Promise<TokenId[]>;                                       
+                                                                                                                                     
+                                         ┌──────────────────────────┐                                                                
+     4. Validate my transfer inputs.     │ Network:     Mainnet     │   validate(                                                    
+                                         │ From chain:  Solana      │     request: RouteTransferRequest<N>,                          
+                                         │ To chain:    Ethereum    │     params: TransferParams<OP>,                                
+                                         │ From token:  JUP         │   ): Promise<ValidationResult<OP>>;                            
+                                         │ To token:    MOG         │                                                                
+                                         │ Amount:      30.245      │                                                                
+                                         └──────────────────────────┘                                                                
+                                         ┌──────────────────────────┐                                                                
+     5. Give me a quote.                 │ Network:     Mainnet     │   quote(                                                       
+                                         │ From chain:  Solana      │     request: RouteTransferRequest<N>,                          
+                                         │ To chain:    Ethereum    │     params: ValidatedTransferParams<OP>,                       
+                                         │ From token:  JUP         │   ): Promise<QuoteResult<OP, VP>>;                             
+                                         │ To token:    MOG         │                                                                
+                                         │ Amount:      30.245      │                                                                
+                                         └──────────────────────────┘                                                                
+                                         ┌──────────────────────────┐                                                                
+     6. Start the transfer.              │ Network:     Mainnet     │   initiate(                                                    
+                                         │ From chain:  Solana      │     request: RouteTransferRequest<N>,                          
+                                         │ To chain:    Ethereum    │     sender: Signer,                                            
+                                         │ From token:  JUP         │     quote: Quote<OP, VP>,                                      
+                                         │ To token:    MOG         │     to: ChainAddress,                                          
+                                         │ Amount:      30.245      │   ): Promise<R>;                                               
+                                         │ Sender:      (Signer)    │                                                                
+                                         │ Quote:       (Quote obj) │                                                                
+                                         │ To address:  0xc02a...   │                                                                
+                                         └──────────────────────────┘                                                                
+                                         ┌──────────────────────────┐                                                                
+     7. Tell me when there's an update.  │ Receipt: (Receipt obj)   │   track(receipt: R, timeout?: number): AsyncGenerator<R>;      
+                                         └──────────────────────────┘                                                                
+        (Called repeatedly until the                                                                                                 
+        transfer is complete)                                                                                                        
+                                                                                                                                     
+---
+
+
+# Route implementations today
+
+- TokenBridgeRoute
+- AutomaticTokenBridgeRoute
+- CCTPRoute
+- AutomaticCCTPRoute
+- PorticoRoute
+- NttRoute
+- AutomaticNttRoute
+- MayanRoute
+
+
+                                                                                                                                    
 ---
 
 # Real example from Backpack
@@ -237,75 +308,6 @@ const routesAndQuotes: [routes.Route<Network>, WormholeSwapQuote][] = (
 );
 
 ```
-
----
-
-# `Route` Interface Methods
-                                                                                                                  
-                                                                                                                                  
-     Step                                 Parameters                    Route interface method                                       
-     ────                                 ──────────                    ──────────────────────                                       
-                                         ┌──────────────────────────┐                                                                
-     1. Which networks do you support?   │                          │   supportedNetworks(): Network[];                              
-                                         └──────────────────────────┘                                                                
-                                         ┌──────────────────────────┐                                                                
-     2. Which chains do you support?     │ Network:     Mainnet     │   supportedChains(network: Network): Chain[];                  
-                                         └──────────────────────────┘                                                                
-                                         ┌──────────────────────────┐                                                                
-     3. Which tokens can I get?          │ Network:     Mainnet     │   supportedDestinationTokens<N extends Network>(               
-                                         │ From chain:  Solana      │     token: TokenId,                                            
-                                         │ To chain:    Ethereum    │     fromChain: ChainContext<N>,                                
-                                         │ From token:  JUP         │     toChain: ChainContext<N>,                                  
-                                         └──────────────────────────┘   ): Promise<TokenId[]>;                                       
-                                                                                                                                     
-                                         ┌──────────────────────────┐                                                                
-     4. Validate my transfer inputs.     │ Network:     Mainnet     │   validate(                                                    
-                                         │ From chain:  Solana      │     request: RouteTransferRequest<N>,                          
-                                         │ To chain:    Ethereum    │     params: TransferParams<OP>,                                
-                                         │ From token:  JUP         │   ): Promise<ValidationResult<OP>>;                            
-                                         │ To token:    MOG         │                                                                
-                                         │ Amount:      30.245      │                                                                
-                                         └──────────────────────────┘                                                                
-                                         ┌──────────────────────────┐                                                                
-     5. Give me a quote.                 │ Network:     Mainnet     │   quote(                                                       
-                                         │ From chain:  Solana      │     request: RouteTransferRequest<N>,                          
-                                         │ To chain:    Ethereum    │     params: ValidatedTransferParams<OP>,                       
-                                         │ From token:  JUP         │   ): Promise<QuoteResult<OP, VP>>;                             
-                                         │ To token:    MOG         │                                                                
-                                         │ Amount:      30.245      │                                                                
-                                         └──────────────────────────┘                                                                
-                                         ┌──────────────────────────┐                                                                
-     6. Start the transfer.              │ Network:     Mainnet     │   initiate(                                                    
-                                         │ From chain:  Solana      │     request: RouteTransferRequest<N>,                          
-                                         │ To chain:    Ethereum    │     sender: Signer,                                            
-                                         │ From token:  JUP         │     quote: Quote<OP, VP>,                                      
-                                         │ To token:    MOG         │     to: ChainAddress,                                          
-                                         │ Amount:      30.245      │   ): Promise<R>;                                               
-                                         │ Sender:      (Signer)    │                                                                
-                                         │ Quote:       (Quote obj) │                                                                
-                                         │ To address:  0xc02a...   │                                                                
-                                         └──────────────────────────┘                                                                
-                                         ┌──────────────────────────┐                                                                
-     7. Tell me when there's an update.  │ Receipt: (Receipt obj)   │   track(receipt: R, timeout?: number): AsyncGenerator<R>;      
-                                         └──────────────────────────┘                                                                
-        (Called repeatedly until the                                                                                                 
-        transfer is complete)                                                                                                        
-                                                                                                                                     
-                                                                                                                                     
-
----
-
-
-# Route implementations today
-
-- TokenBridgeRoute
-- AutomaticTokenBridgeRoute
-- CCTPRoute
-- AutomaticCCTPRoute
-- PorticoRoute
-- NttRoute
-- AutomaticNttRoute
-- MayanRoute
 
 
 ---
@@ -365,12 +367,13 @@ Wormhole Connect config example:
 
 ## SDK feature gaps
 
-Let's finish replacing Advanced Tools!
+We're close to saying goodbye to `@certusone` and Advanced Tools
 
-- Platform support (Near)
+- Platform support (Near, Algorand)
 - Attesting/registering tokens
   - Token Bridge and Monad Bridge
   - Needs similar high level interface
+- Arbitrary token support
 
 ## Interface improvements
 
@@ -391,6 +394,17 @@ Let's finish replacing Advanced Tools!
 
 Time-to-integrate
 
+
+---
+
+# Key Takeaway
+
+All common use cases should be served by `routes`:
+
+```ts
+import { routes } from '@wormhole-foundation/sdk';
+```
+
 ---
 
 
@@ -410,21 +424,4 @@ Time-to-integrate
     ██▓▒⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀░▒▒▒▒▒▒░░░⠀⠀⠀▒███
     ████▓▓▓▓▓▓░⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀░░▒▓▓███
     ████████▓░⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀░▓████
-
----
-
-talk about protocols and platforms
-
-track method
-
-leave 10-15 mins
-
-places we could use help
-
-near and algorand?
-
-touch on adv tools deprecation
-
-
-
 
